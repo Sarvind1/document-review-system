@@ -128,8 +128,8 @@ def embed_pdf_base64(s3_key):
         return f"<div style='padding:20px; border:1px solid #ddd; background:#f9f9f9;'><h3>Error Loading PDF</h3><code>{str(e)}</code></div>"
 
 def use_fallback_pdf(s3_key):
-    """Use a local fallback PDF if available."""
-    # Fallback to local file if it exists
+    """Use a local fallback PDF if available, or create HTML placeholder."""
+    # Try local file if it exists
     local_path = f"static/documents/{s3_key}"
     if os.path.exists(local_path):
         st.info(f"Using local file: {local_path}")
@@ -152,13 +152,39 @@ def use_fallback_pdf(s3_key):
         except Exception as local_error:
             st.warning(f"Error reading local file: {str(local_error)}")
     
-    # Display placeholder instead
+    # Parse document info from s3_key
+    try:
+        parts = s3_key.split('/')
+        doc_type = parts[0] if len(parts) > 0 else "Unknown"
+        batch = parts[1] if len(parts) > 1 else "Unknown"
+        filename = parts[2] if len(parts) > 2 else s3_key
+        
+        version = "Unknown"
+        if '_' in filename:
+            version = filename.split('_')[-1].split('.')[0]
+    except:
+        doc_type = "Unknown"
+        batch = "Unknown"
+        version = "Unknown"
+    
+    # Display HTML placeholder instead
     return f'''
-        <div style="width:100%; height:60vh; display:flex; align-items:center; justify-content:center; border:1px solid #ddd; background:#f8f9fa;">
-            <div style="text-align:center; padding:20px;">
-                <h3>PDF Preview Not Available</h3>
-                <p>S3 connection failed and no local fallback found</p>
-                <p>File path: {s3_key}</p>
+        <div style="width:100%; height:60vh; border:1px solid #ddd; background:#f8f9fa; overflow:auto; padding:20px;">
+            <div style="margin:20px; border:2px solid #333; padding:40px; background:white; min-height:500px; position:relative;">
+                <h2 style="text-align:center; margin-bottom:40px; color:#333;">{doc_type} Document</h2>
+                <div style="margin-bottom:30px;">
+                    <strong>Batch:</strong> {batch}<br>
+                    <strong>Version:</strong> {version}<br>
+                    <strong>File Path:</strong> {s3_key}
+                </div>
+                <div style="margin-bottom:30px;">
+                    <h3>Document Content (Preview Unavailable)</h3>
+                    <p style="color:#666;">This is a placeholder for document content. The actual document could not be loaded from S3.</p>
+                    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam auctor, nisl eget ultricies tincidunt...</p>
+                </div>
+                <div style="position:absolute; bottom:20px; right:20px; color:#999; font-size:12px;">
+                    Demo Mode - PDF Preview Unavailable
+                </div>
             </div>
         </div>
     '''
