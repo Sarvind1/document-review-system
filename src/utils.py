@@ -10,6 +10,13 @@ import tempfile
 from s3_utils import upload_file_to_s3, download_file_from_s3, get_s3_file_url, get_s3_client, get_full_s3_key
 import streamlit as st
 
+def get_secret(key, default=None):
+    """Get a secret from Streamlit secrets or environment variables."""
+    try:
+        return st.secrets["aws"][key]
+    except (KeyError, FileNotFoundError):
+        return os.environ.get(f"AWS_{key.upper()}", default)
+
 def load_data():
     """Load and prepare the review data."""
     try:
