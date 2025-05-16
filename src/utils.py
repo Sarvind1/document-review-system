@@ -13,14 +13,27 @@ import streamlit as st
 def load_data():
     """Load and prepare the review data."""
     try:
+        # First try to load from S3
+        try:
+            s3_client = get_s3_client()
+            # Test connection
+            s3_client.list_objects(Bucket=get_secret('bucket_name'), MaxKeys=1)
+            st.success("Successfully connected to S3")
+            use_s3 = True
+        except Exception as e:
+            st.warning(f"S3 connection failed: {str(e)}")
+            st.info("Using local demo data instead")
+            use_s3 = False
+            
         if os.path.exists("data/Manual_Review.csv"):
             df_batches = pd.read_csv("data/Manual_Review.csv")
         else:
+            # Create demo data
             data = {
-                'Batch': ['B001', 'B001', 'B002', 'B002', 'B003'],
-                'batch_count': [1, 2, 1, 2, 1],
-                'portal_status': ['Pending', 'Accepted', 'Rejected', 'Pending', 'Accepted'],
-                'reason': ['', 'Approved by agent', 'Missing information', '', 'Complete documentation']
+                'Batch': ['B001', 'B001', 'B002', 'B002', 'B003', 'B003'],
+                'batch_count': [1, 2, 1, 2, 1, 2],
+                'portal_status': ['Pending', 'Accepted', 'Rejected', 'Pending', 'Accepted', 'In Review'],
+                'reason': ['', 'Approved by agent', 'Missing information', '', 'Complete documentation', 'Waiting for verification']
             }
             df_batches = pd.DataFrame(data)
 
@@ -64,29 +77,63 @@ def embed_pdf_base64(s3_key):
     try:
         # Download the PDF content from S3
         s3_client = get_s3_client()
-        bucket_name = st.secrets["aws"]["bucket_name"]
+        bucket_name = get_secret('bucket_name')
         full_key = get_full_s3_key(s3_key)
         
-        # Get the PDF content directly from S3
-        response = s3_client.get_object(Bucket=bucket_name, Key=full_key)
-        pdf_content = response['Body'].read()
-        
-        # Encode the PDF content as base64
-        base64_pdf = base64.b64encode(pdf_content).decode('utf-8')
-        
-        # Create the PDF viewer HTML with base64 data
-        pdf_display = f'''
-            <div style="width:100%; height:60vh;">
-                <embed
-                    type="application/pdf"
-                    src="data:application/pdf;base64,{base64_pdf}"
-                    width="100%"
-                    height="100%"
-                    style="border: 1px solid #ddd; border-radius: 4px;"
-                />
-            </div>
-        '''
-        return pdf_display
+        try:
+            # Get the PDF content directly from S3
+            response = s3_client.get_object(Bucket=bucket_name, Key=full_key)
+            pdf_content = response['Body'].read()
+            
+            # Encode the PDF content as base64
+            base64_pdf = base64.b64encode(pdf_content).decode('utf-8')
+            
+            # Create the PDF viewer HTML with base64 data
+            pdf_display = f'''
+                <div style="width:100%; height:60vh;">
+                    <embed
+                        type="application/pdf"
+                        src="data:application/pdf;base64,{base64_pdf}"
+                        width="100%"
+                        height="100%"
+                        style="border: 1px solid #ddd; border-radius: 4px;"
+                    />
+                </div>
+            '''
+            return pdf_display
+        except Exception as s3_error:
+            st.warning(f"Error fetching from S3: {str(s3_error)}")
+            
+            # Fallback to local file if it exists
+            local_path = f"static/documents/{s3_key}"
+            if os.path.exists(local_path):
+                st.info(f"Using local file: {local_path}")
+                with open(local_path, "rb") as f:
+                    pdf_content = f.read()
+                    base64_pdf = base64.b64encode(pdf_content).decode('utf-8')
+                    pdf_display = f'''
+                        <div style="width:100%; height:60vh;">
+                            <embed
+                                type="application/pdf"
+                                src="data:application/pdf;base64,{base64_pdf}"
+                                width="100%"
+                                height="100%"
+                                style="border: 1px solid #ddd; border-radius: 4px;"
+                            />
+                        </div>
+                    '''
+                    return pdf_display
+            else:
+                # Display placeholder instead
+                return f'''
+                    <div style="width:100%; height:60vh; display:flex; align-items:center; justify-content:center; border:1px solid #ddd; background:#f8f9fa;">
+                        <div style="text-align:center; padding:20px;">
+                            <h3>PDF Preview Not Available</h3>
+                            <p>S3 connection failed and no local fallback found</p>
+                            <p>File path: {s3_key}</p>
+                        </div>
+                    </div>
+                '''
     except Exception as e:
         return f"<div style='padding:20px; border:1px solid #ddd; background:#f9f9f9;'><h3>Error Loading PDF</h3><code>{str(e)}</code></div>"
 
