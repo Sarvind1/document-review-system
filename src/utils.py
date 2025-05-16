@@ -9,8 +9,8 @@ import csv
 import tempfile
 import streamlit as st
 
-# Import s3_utils functions including get_secret
-from s3_utils import upload_file_to_s3, download_file_from_s3, get_s3_file_url, get_s3_client, get_full_s3_key, get_secret
+# Use relative import for s3_utils within the same package
+from .s3_utils import upload_file_to_s3, download_file_from_s3, get_s3_file_url, get_s3_client, get_full_s3_key, get_secret
 
 def load_data():
     """Load and prepare the review data."""

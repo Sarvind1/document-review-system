@@ -3,7 +3,8 @@
 import streamlit as st
 from datetime import datetime
 
-from utils import (
+# Use relative imports for internal modules
+from .utils import (
     load_data,
     format_status_tag,
     format_portal_status,
@@ -11,7 +12,7 @@ from utils import (
     generate_comparison_pairs,
     export_audit_trail
 )
-from styles import STYLES
+from .styles import STYLES
 
 # Set page config
 st.set_page_config(
