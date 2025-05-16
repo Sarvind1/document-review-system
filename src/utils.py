@@ -80,12 +80,29 @@ def embed_pdf_base64(s3_key):
         # Download the PDF content from S3
         s3_client = get_s3_client()
         bucket_name = get_secret('bucket_name')
+        
+        # Check if bucket_name is valid
+        if not bucket_name:
+            st.warning("S3 bucket name is not configured")
+            return use_fallback_pdf(s3_key)
+            
         full_key = get_full_s3_key(s3_key)
         
         try:
             # Get the PDF content directly from S3
             response = s3_client.get_object(Bucket=bucket_name, Key=full_key)
+            
+            # Ensure we have valid content
+            if 'Body' not in response:
+                st.warning("No content body in S3 response")
+                return use_fallback_pdf(s3_key)
+                
             pdf_content = response['Body'].read()
+            
+            # Check if pdf_content is valid
+            if not pdf_content or not isinstance(pdf_content, (str, bytes)):
+                st.warning("Invalid PDF content returned from S3")
+                return use_fallback_pdf(s3_key)
             
             # Encode the PDF content as base64
             base64_pdf = base64.b64encode(pdf_content).decode('utf-8')
@@ -105,39 +122,46 @@ def embed_pdf_base64(s3_key):
             return pdf_display
         except Exception as s3_error:
             st.warning(f"Error fetching from S3: {str(s3_error)}")
-            
-            # Fallback to local file if it exists
-            local_path = f"static/documents/{s3_key}"
-            if os.path.exists(local_path):
-                st.info(f"Using local file: {local_path}")
-                with open(local_path, "rb") as f:
-                    pdf_content = f.read()
-                    base64_pdf = base64.b64encode(pdf_content).decode('utf-8')
-                    pdf_display = f'''
-                        <div style="width:100%; height:60vh;">
-                            <embed
-                                type="application/pdf"
-                                src="data:application/pdf;base64,{base64_pdf}"
-                                width="100%"
-                                height="100%"
-                                style="border: 1px solid #ddd; border-radius: 4px;"
-                            />
-                        </div>
-                    '''
-                    return pdf_display
-            else:
-                # Display placeholder instead
-                return f'''
-                    <div style="width:100%; height:60vh; display:flex; align-items:center; justify-content:center; border:1px solid #ddd; background:#f8f9fa;">
-                        <div style="text-align:center; padding:20px;">
-                            <h3>PDF Preview Not Available</h3>
-                            <p>S3 connection failed and no local fallback found</p>
-                            <p>File path: {s3_key}</p>
-                        </div>
+            return use_fallback_pdf(s3_key)
+    except Exception as e:
+        st.error(f"Error Loading PDF: {str(e)}")
+        return f"<div style='padding:20px; border:1px solid #ddd; background:#f9f9f9;'><h3>Error Loading PDF</h3><code>{str(e)}</code></div>"
+
+def use_fallback_pdf(s3_key):
+    """Use a local fallback PDF if available."""
+    # Fallback to local file if it exists
+    local_path = f"static/documents/{s3_key}"
+    if os.path.exists(local_path):
+        st.info(f"Using local file: {local_path}")
+        try:
+            with open(local_path, "rb") as f:
+                pdf_content = f.read()
+                base64_pdf = base64.b64encode(pdf_content).decode('utf-8')
+                pdf_display = f'''
+                    <div style="width:100%; height:60vh;">
+                        <embed
+                            type="application/pdf"
+                            src="data:application/pdf;base64,{base64_pdf}"
+                            width="100%"
+                            height="100%"
+                            style="border: 1px solid #ddd; border-radius: 4px;"
+                        />
                     </div>
                 '''
-    except Exception as e:
-        return f"<div style='padding:20px; border:1px solid #ddd; background:#f9f9f9;'><h3>Error Loading PDF</h3><code>{str(e)}</code></div>"
+                return pdf_display
+        except Exception as local_error:
+            st.warning(f"Error reading local file: {str(local_error)}")
+    
+    # Display placeholder instead
+    return f'''
+        <div style="width:100%; height:60vh; display:flex; align-items:center; justify-content:center; border:1px solid #ddd; background:#f8f9fa;">
+            <div style="text-align:center; padding:20px;">
+                <h3>PDF Preview Not Available</h3>
+                <p>S3 connection failed and no local fallback found</p>
+                <p>File path: {s3_key}</p>
+            </div>
+        </div>
+    '''
 
 def generate_comparison_pairs(versions):
     """Generate pairs of versions for comparison."""
