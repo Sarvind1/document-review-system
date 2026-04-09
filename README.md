@@ -1,73 +1,102 @@
 # Document Review System
 
-A Streamlit-based web application for reviewing and comparing multiple PDF document batches. Supports side-by-side document comparison, audit trails, and integration with AWS S3 for document storage.
+A Streamlit-based web application for reviewing, comparing, and managing batch PDF documents with side-by-side comparison, audit trails, and AWS S3 integration.
 
 ## Features
 
-- **Batch Document Organization**: Review documents organized by batch and type (CI/PL)
-- **Multi-Version Comparison**: View and compare different versions of the same document side-by-side
-- **PDF Viewer**: Embedded PDF viewer with document display
-- **Review Tracking**: Capture review decisions and notes with full audit trail
-- **Cloud Storage Integration**: Seamless S3 integration with local fallback
-- **Status Management**: Track portal and review status for each batch
+- **Batch Document Management**: Organize and review documents by batch ID
+- **Side-by-Side Comparison**: Compare different versions of the same document
+- **Portal Status Tracking**: Track document status across review stages (Pending, Accepted, Rejected, In Review)
+- **Audit Trail**: Automatic logging of all review decisions and notes
+- **S3 Integration**: Seamless upload/download of documents from AWS S3 with fallback to local storage
+- **CSV Data Support**: Load and manage review metadata from CSV files
+- **Review Notes**: Add custom notes and decision reasons during document review
 
 ## Tech Stack
 
-- **Streamlit** - Interactive web framework
-- **Python 3** - Core language
-- **Pandas** - Data manipulation
-- **boto3** - AWS S3 integration
-- **Pillow** - Image processing
+- **Framework**: Streamlit
+- **Language**: Python 3.x
+- **Data Processing**: pandas
+- **Cloud Storage**: AWS S3
+- **Deployment**: Streamlit Cloud / Local / Docker
 
-## Setup
+## Requirements
 
-1. **Create and activate virtual environment:**
+- Python 3.8+
+- pandas
+- streamlit
+- boto3 (for AWS S3)
+
+## Setup Instructions
+
+1. **Clone the repository**
    ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate  # macOS/Linux
-   # or
-   .venv\Scripts\activate  # Windows
+   git clone https://github.com/yourusername/document-review-system.git
+   cd document-review-system
    ```
 
-2. **Install dependencies:**
+2. **Create a virtual environment**
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-3. **Configure AWS credentials:**
-   - Create `.streamlit/secrets.toml` with AWS credentials (see `.streamlit/secrets.example.toml`)
-   - Or set environment variables: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, etc.
-
-4. **Prepare data:**
-   - Place batch metadata in `data/Manual_Review.csv`
-   - PDF documents in `static/documents/{CI,PL}/{BATCH}/`
-
-5. **Run the application:**
+4. **Configure AWS credentials** (optional, for S3 support)
    ```bash
-   streamlit run streamlit_app.py
+   cp .streamlit/secrets.example.toml .streamlit/secrets.toml
+   # Edit secrets.toml with your AWS credentials
    ```
+
+5. **Run the application**
+   ```bash
+   streamlit run app.py
+   ```
+
+The app will open at `http://localhost:8501`
 
 ## Usage
 
-1. Select a batch from the dropdown
-2. Choose document type (CI or PL)
-3. Compare multiple document versions side-by-side
-4. Record your review decision and notes
-5. System maintains automatic audit trail of all reviews
+1. **Select a Batch**: Choose a batch ID from the dropdown to load related documents
+2. **Choose Document Type**: Select between document types (CI, PL, etc.)
+3. **Compare Versions**: Select two versions to view side-by-side
+4. **Add Review Notes**: Enter your review decision and notes
+5. **Submit Review**: Save your review decision to the audit trail
+6. **Export Results**: Download the review audit trail as CSV
 
 ## Project Structure
 
 ```
-.
+document-review-system/
 ├── src/
-│   ├── app.py              # Main Streamlit application
-│   ├── utils.py            # Utility functions (data loading, formatting)
-│   ├── s3_utils.py         # AWS S3 integration
-│   └── styles.py           # CSS styling
-├── scripts/
-│   ├── create_demo_pdfs.py # Generate sample PDFs
-│   └── upload_to_s3.py     # S3 upload utility
-├── data/                   # Batch metadata CSVs
-├── static/documents/       # PDF documents organized by type/batch
-└── requirements.txt        # Python dependencies
+│   ├── app.py           # Main Streamlit application
+│   ├── utils.py         # Utility functions for data processing
+│   ├── s3_utils.py      # AWS S3 integration
+│   └── styles.py        # Custom CSS styling
+├── static/
+│   └── documents/       # Local document storage
+├── data/
+│   ├── Manual_Review.csv        # Review metadata
+│   └── Manual_Review_2.csv      # Additional review data
+├── .streamlit/
+│   └── secrets.example.toml     # Template for Streamlit secrets
+├── requirements.txt             # Python dependencies
+├── app.py                       # Application entry point
+└── README.md
 ```
+
+## Environment Variables
+
+For S3 integration, configure the following in `.streamlit/secrets.toml`:
+- `aws_access_key_id`: AWS access key
+- `aws_secret_access_key`: AWS secret key
+- `bucket_name`: S3 bucket name
+- `aws_region`: AWS region (default: us-east-1)
+
+## License
+
+MIT

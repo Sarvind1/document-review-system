@@ -25,18 +25,8 @@ MANIFEST
 # Virtual Environment
 venv/
 ENV/
-.venv/
-
-# Environment variables
 .env
-.env.local
-.env.*.local
-*.env
-
-# Streamlit
-.streamlit/secrets.toml
-.streamlit/cache/
-.streamlit/*.json
+.venv/
 
 # IDE
 .idea/
@@ -46,32 +36,50 @@ ENV/
 *.sublime-project
 *.sublime-workspace
 
+# Streamlit
+.streamlit/secrets.toml
+.streamlit/cache/
+.streamlit/.cache/
+
 # OS
 .DS_Store
 Thumbs.db
-.Spotlight-V100
-.Trashes
+.env.local
+.env.*.local
 
 # Logs
 *.log
-logs/
+migration.log
+
+# Data files (large document collections)
+static/documents/
+sample.pdf
+*.pdf
+
+# IDE User-specific files
+.vscode/settings.json
+.vscode/launch.json
+.DS_Store
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
 
 # Temporary files
 *.tmp
+*.bak
 *~
-.tmp/
+.#*
 
-# Large PDF files (use LFS or serve from S3)
-*.pdf
-
-# Local data files that change during runtime
-data/Manual_Review*.csv
-*.csv.bak
-
-# macOS
+# Mac
 .AppleDouble
 .LSOverride
-
-# Node (if applicable)
-node_modules/
-npm-debug.log
+._*
+.Spotlight-V100
+.Trashes
